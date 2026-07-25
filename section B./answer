@@ -1,0 +1,160 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX 200
+
+char opStack[MAX];
+int top = -1;
+
+char postfix[MAX][20];
+int pIndex = 0;
+
+void push(char c)
+{
+    opStack[++top] = c;
+}
+
+char pop()
+{
+    return opStack[top--];
+}
+
+char peek()
+{
+    return opStack[top];
+}
+
+int isEmpty()
+{
+    return top == -1;
+}
+
+int precedence(char op)
+{
+    if(op=='+' || op=='-')
+        return 1;
+    if(op=='*' || op=='/')
+        return 2;
+    return 0;
+}
+
+int isOperator(char c)
+{
+    return c=='+' || c=='-' || c=='*' || c=='/';
+}
+
+int main()
+{
+    char expr[MAX];
+
+    fgets(expr, MAX, stdin);
+
+    char *token = strtok(expr, " \n");
+
+    while(token!=NULL)
+    {
+        if(isdigit(token[0]))
+        {
+            strcpy(postfix[pIndex++], token);
+        }
+
+        else if(token[0]=='(')
+        {
+            push('(');
+        }
+
+        else if(token[0]==')')
+        {
+            while(!isEmpty() && peek()!='(')
+            {
+                postfix[pIndex][0]=pop();
+                postfix[pIndex][1]='\0';
+                pIndex++;
+            }
+
+            if(isEmpty())
+            {
+                printf("ERROR:UNBALANCED");
+                return 0;
+            }
+
+            pop();
+        }
+
+        else if(isOperator(token[0]))
+        {
+            while(!isEmpty() && precedence(peek())>=precedence(token[0]))
+            {
+                if(peek()=='(')
+                    break;
+
+                postfix[pIndex][0]=pop();
+                postfix[pIndex][1]='\0';
+                pIndex++;
+            }
+
+            push(token[0]);
+        }
+
+        token=strtok(NULL," \n");
+    }
+
+    while(!isEmpty())
+    {
+        if(peek()=='(')
+        {
+            printf("ERROR:UNBALANCED");
+            return 0;
+        }
+
+        postfix[pIndex][0]=pop();
+        postfix[pIndex][1]='\0';
+        pIndex++;
+    }
+
+    int stack[MAX];
+    int t=-1;
+
+    for(int i=0;i<pIndex;i++)
+    {
+        if(isdigit(postfix[i][0]))
+        {
+            stack[++t]=atoi(postfix[i]);
+        }
+        else
+        {
+            int b=stack[t--];
+            int a=stack[t--];
+
+            switch(postfix[i][0])
+            {
+                case '+':
+                    stack[++t]=a+b;
+                    break;
+
+                case '-':
+                    stack[++t]=a-b;
+                    break;
+
+                case '*':
+                    stack[++t]=a*b;
+                    break;
+
+                case '/':
+                    if(b==0)
+                    {
+                        printf("ERROR:DIV_BY_ZERO");
+                        return 0;
+                    }
+                    stack[++t]=a/b;
+                    break;
+            }
+        }
+    }
+
+    printf("%d", stack[t]);
+
+    return 0;
+}
